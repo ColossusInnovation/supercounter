@@ -1,0 +1,13 @@
+{
+  "name": "dashboard",
+  "private": true,
+  "dependencies": {
+    "stimulus": "^1.1.1",
+    "@rails/webpacker": "^4.0.2",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.2.3"
+  },
+  "devDependencies": {
+    "webpack-dev-server": "^3.2.1"
+  }
+}

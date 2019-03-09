@@ -1,0 +1,15 @@
+version: '3.6'
+services:
+  redis:
+    image: "redis:3.2.8"
+  mongo:
+    image: "mongo:3.6"
+  worker:
+    build:
+      context: ../
+      dockerfile: worker/Dockerfile
+    volumes:
+      - .:/app
+    links:
+    - "mongo:mongo"
+    - "redis:redis"

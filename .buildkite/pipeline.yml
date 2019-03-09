@@ -1,0 +1,74 @@
+steps:
+  - label: ":docker: Build API"
+    plugins:
+      - docker-login#v2.0.1:
+          username: zachmccormick
+      - docker-compose#v3.0.0:
+          build: api
+          config: api/docker-compose.tests.yml
+          image-repository: index.docker.io/colossusinnovation/supercounter-api
+          cache-from: api:index.docker.io/colossusinnovation/supercounter-api:latest
+  - label: ":docker: Build Dashboard"
+    plugins:
+      - docker-login#v2.0.1:
+          username: zachmccormick
+      - docker-compose#v3.0.0:
+          build: dashboard
+          config: dashboard/docker-compose.tests.yml
+          image-repository: index.docker.io/colossusinnovation/supercounter-dashboard
+          cache-from: api:index.docker.io/colossusinnovation/supercounter-dashboard:latest
+  - label: ":docker: Build Worker"
+    plugins:
+      - docker-login#v2.0.1:
+          username: zachmccormick
+      - docker-compose#v3.0.0:
+          build: worker
+          config: worker/docker-compose.tests.yml
+          image-repository: index.docker.io/colossusinnovation/supercounter-worker
+          cache-from: api:index.docker.io/colossusinnovation/supercounter-worker:latest
+  - wait
+
+  - label: ":rspec: Test API"
+    artifact_paths: "api/tmp/rspec-*.xml"
+    commands:
+      - "bundle install --with test development"
+      - "RAILS_ENV=test RACK_ENV=test bundle exec rspec --format progress --format RspecJunitFormatter --out tmp/rspec-$BUILDKITE_JOB_ID.xml"
+    plugins:
+      - docker-compose#v3.0.0:
+          run: api
+          config: api/docker-compose.tests.yml
+  - label: ":rspec: Test Dashboard"
+    artifact_paths: "dashboard/tmp/rspec-*.xml"
+    commands:
+      - "bundle install --with test development"
+      - "RAILS_ENV=test RACK_ENV=test bundle exec rspec --format progress --format RspecJunitFormatter --out tmp/rspec-$BUILDKITE_JOB_ID.xml"
+    plugins:
+      - docker-compose#v3.0.0:
+          run: dashboard
+          config: dashboard/docker-compose.tests.yml
+  - label: ":rspec: Test Worker"
+    artifact_paths: "worker/tmp/rspec-*.xml"
+    commands:
+      - "bundle install --with test development"
+      - "RAILS_ENV=test RACK_ENV=test bundle exec rspec --format progress --format RspecJunitFormatter --out tmp/rspec-$BUILDKITE_JOB_ID.xml"
+    plugins:
+      - docker-compose#v3.0.0:
+          run: worker
+          config: worker/docker-compose.tests.yml
+  - wait: ~
+    continue_on_failure: true
+
+  - label: ":junit:"
+    commands:
+      - .buildkite/junit.sh
+  - wait
+
+  - label: ":docker: Push API"
+    plugins:
+      - docker-login#v2.0.1:
+          username: zachmccormick
+      - docker-compose#v3.0.0:
+          config: api/docker-compose.tests.yml
+          push:
+            - api:index.docker.io/colossusinnovation/supercounter-api:${BUILDKITE_COMMIT}
+            - api:index.docker.io/colossusinnovation/supercounter-api:latest
