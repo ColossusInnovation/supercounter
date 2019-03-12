@@ -78,12 +78,6 @@ RSpec.describe CountersController, type: :controller do
       expect(counter.count).to eq(0)
     end
 
-    it "should increment the counter synchronously (purposefully failing test)" do
-      get :increment_async, :params => {:id => counter.id}
-      counter.reload
-      expect(counter.count).to eq(1)
-    end
-
     it "should schedule a job to asychronously increment the counter" do
       expect(JobEnqueuer).to receive(:increment_counter).with(counter.id)
       get :increment_async, :params => {:id => counter.id}
